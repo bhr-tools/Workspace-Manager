@@ -4,19 +4,11 @@ import Quickshell
 import QtQuick
 
 // Human-readable names and icons for Hyprland clients (hyprctl clients -j).
-// displayName() ports the display-names script of Nixos-Workstations so a
-// window reads the same here, in the bar and in the switcher.
+// Both come from the window's desktop entry (matched by StartupWMClass or
+// name), following the same rule as the display-names script of
+// Nixos-Workstations: no application is listed here.
 Singleton {
     id: root
-
-    readonly property var webApps: [
-        ["obsidian", "Obsidian"],
-        ["deezer", "Deezer"],
-        ["netflix", "Netflix"],
-        ["calendar.notion", "Notion Calendar"],
-        ["todoist", "Todoist"],
-        ["whatsapp", "Whatsapp"],
-    ]
 
     function capitalize(text: string): string {
         return text.split(/\s+/).filter(w => w.length > 0)
@@ -24,28 +16,31 @@ Singleton {
             .join(" ");
     }
 
+    function entryFor(client: var): var {
+        // Reading the list makes callers' bindings re-evaluate once the
+        // desktop entries are indexed (the index loads lazily).
+        if (!client || DesktopEntries.applications.values.length === 0)
+            return null;
+        return DesktopEntries.heuristicLookup(client.class ?? "")
+            ?? DesktopEntries.heuristicLookup(client.initialClass ?? "");
+    }
+
     function displayName(client: var): string {
         if (!client)
             return "";
-        const initial = (client.initialTitle ?? "").toLowerCase();
+        const entry = entryFor(client);
         const title = client.title ?? "";
-        const lower = title.toLowerCase();
 
-        if (initial.includes("kitty")) {
-            if (lower.startsWith("yazi")) return "Yazi";
-            if (lower.startsWith("ncmpcpp")) return "Ncmpcpp";
-            if (lower.includes("/") || lower.includes("~")) return "Kitty";
-            return capitalize(title) || "Kitty";
-        }
-        for (const [key, name] of webApps)
-            if (initial.includes(key))
-                return name;
+        // A terminal is named after what runs in it, unless its title is just
+        // a shell prompt or a path.
+        if (entry?.categories?.includes("TerminalEmulator") && title !== "" && !/[\/~@]/.test(title))
+            return capitalize(title);
+        if (entry?.name)
+            return entry.name[0].toUpperCase() + entry.name.slice(1);
         return capitalize(client.initialTitle || client.class || "?");
     }
 
     function iconFor(client: var): string {
-        const entry = DesktopEntries.heuristicLookup(client?.class ?? "")
-            ?? DesktopEntries.heuristicLookup(client?.initialClass ?? "");
-        return Quickshell.iconPath(entry?.icon || client?.class || "", "application-x-executable");
+        return Quickshell.iconPath(entryFor(client)?.icon || client?.class || "", "application-x-executable");
     }
 }
