@@ -18,11 +18,8 @@ Rectangle {
 
     readonly property bool stage: Stage.isEnabled(wsId)
     readonly property bool active: Hypr.monitorMap[monitorName]?.activeWorkspace?.id === wsId
-    readonly property var windows: isNew ? [] : Hypr.clients
-        .filter(c => c.workspace.id === wsId)
-        .sort((a, b) => a.at[0] - b.at[0] || a.at[1] - b.at[1])
-        .map(c => c.address)
-    readonly property var backstage: stage ? Stage.stripOf(wsId).map(c => c.address) : []
+    readonly property var windows: isNew ? [] : OverviewState.windowsOf(wsId)
+    readonly property var backstage: OverviewState.backstageOf(wsId)
 
     implicitWidth: Theme.cardWidth
     implicitHeight: Theme.cardHeight
@@ -84,7 +81,7 @@ Rectangle {
 
                 Text {
                     Layout.fillWidth: true
-                    text: card.isNew ? "Nouveau workspace" : card.windows.length === 0 && card.backstage.length === 0 ? "vide" : ""
+                    text: card.isNew ? "New workspace" : card.windows.length === 0 && card.backstage.length === 0 ? "empty" : ""
                     color: Theme.muted
                     font.family: Theme.font
                     font.pixelSize: Theme.smallSize
@@ -149,7 +146,7 @@ Rectangle {
                     visible: card.backstage.length > 0
                     topPadding: Theme.spacing / 2
                     leftPadding: Theme.spacing
-                    text: "En coulisse"
+                    text: "Backstage"
                     color: Theme.muted
                     font.family: Theme.font
                     font.pixelSize: Theme.smallSize

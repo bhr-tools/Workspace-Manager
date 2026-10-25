@@ -1,56 +1,30 @@
 import qs.common
 import qs.components
 import qs.services
+import Quickshell
 import QtQuick
 import QtQuick.Layouts
 
-// A backstage window: click puts it on stage, middle click closes it.
+// A backstage window as an icon: click puts it on stage, middle click closes
+// it, hovering shows its name and title beside the strip.
 Rectangle {
     id: tile
 
     required property string address
     readonly property var client: Hypr.clientMap[address] ?? null
 
-    implicitHeight: content.implicitHeight + Theme.padding * 2
+    implicitHeight: width
     radius: Theme.radius
-    color: area.containsMouse ? Theme.highlightMed : Theme.overlay
+    color: area.containsMouse ? Theme.highlightMed : Qt.alpha(Theme.surface, 0.85)
 
     Behavior on color {
         ColorAnimation { duration: Theme.anim }
     }
 
-    ColumnLayout {
-        id: content
+    AppIcon {
         anchors.centerIn: parent
-        width: parent.width - Theme.padding * 2
-        spacing: Theme.spacing / 2
-
-        AppIcon {
-            Layout.alignment: Qt.AlignHCenter
-            implicitSize: 40
-            client: tile.client
-        }
-
-        Text {
-            Layout.fillWidth: true
-            text: Names.displayName(tile.client)
-            color: Theme.text
-            font.family: Theme.font
-            font.pixelSize: Theme.fontSize
-            horizontalAlignment: Text.AlignHCenter
-            elide: Text.ElideRight
-        }
-
-        Text {
-            Layout.fillWidth: true
-            text: tile.client?.title ?? ""
-            visible: text !== "" && text !== Names.displayName(tile.client)
-            color: Theme.subtle
-            font.family: Theme.font
-            font.pixelSize: Theme.smallSize
-            horizontalAlignment: Text.AlignHCenter
-            elide: Text.ElideRight
-        }
+        implicitSize: tile.width * 0.6
+        client: tile.client
     }
 
     MouseArea {
@@ -64,6 +38,47 @@ Rectangle {
                 Hypr.batch([`closewindow address:${tile.address}`]);
             else
                 Stage.show(tile.address);
+        }
+    }
+
+    PopupWindow {
+        visible: area.containsMouse
+        anchor.item: tile
+        anchor.edges: Edges.Right
+        anchor.gravity: Edges.Right
+        anchor.margins.left: Theme.spacing
+        implicitWidth: label.implicitWidth + Theme.padding * 2
+        implicitHeight: label.implicitHeight + Theme.spacing * 2
+        color: "transparent"
+
+        Rectangle {
+            anchors.fill: parent
+            radius: Theme.radius
+            color: Theme.overlay
+            border.color: Theme.highlightMed
+
+            ColumnLayout {
+                id: label
+                anchors.centerIn: parent
+                spacing: 0
+
+                Text {
+                    text: Names.displayName(tile.client)
+                    color: Theme.text
+                    font.family: Theme.font
+                    font.pixelSize: Theme.fontSize
+                }
+
+                Text {
+                    Layout.maximumWidth: 360
+                    text: tile.client?.title ?? ""
+                    visible: text !== "" && text !== Names.displayName(tile.client)
+                    color: Theme.subtle
+                    font.family: Theme.font
+                    font.pixelSize: Theme.smallSize
+                    elide: Text.ElideRight
+                }
+            }
         }
     }
 }

@@ -15,11 +15,13 @@ Rectangle {
 
     readonly property var client: Hypr.clientMap[address] ?? null
     readonly property bool selected: OverviewState.selection.includes(address)
+    readonly property bool current: OverviewState.cursor === address
 
     implicitHeight: Theme.rowHeight
     radius: Theme.radius
-    color: selected ? Qt.alpha(Theme.accent, 0.3) : handle.containsMouse ? Theme.highlightMed : "transparent"
-    border.color: selected ? Theme.accent : "transparent"
+    color: selected ? Qt.alpha(Theme.accent, 0.3) : current ? Qt.alpha(Theme.foam, 0.25) : handle.containsMouse ? Theme.highlightMed : "transparent"
+    border.width: current ? 2 : 1
+    border.color: current ? Theme.foam : selected ? Theme.accent : "transparent"
     opacity: !OverviewState.matches(client) ? 0.25 : backstage ? 0.65 : 1
 
     RowLayout {
@@ -52,7 +54,7 @@ Rectangle {
         }
 
         Text {
-            text: "flottante"
+            text: "floating"
             visible: row.client?.floating ?? false
             color: Theme.muted
             font.family: Theme.font

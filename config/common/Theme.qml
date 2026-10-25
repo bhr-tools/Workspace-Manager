@@ -49,7 +49,7 @@ Singleton {
     readonly property int spacing: 8
     readonly property int anim: 120
 
-    readonly property int stripWidth: 170
+    readonly property int stripWidth: 56
     readonly property int cardWidth: 260
     readonly property int cardHeight: 220
     readonly property int rowHeight: 32

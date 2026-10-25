@@ -8,8 +8,8 @@ import QtQuick
 import QtQuick.Layouts
 
 // Full-screen overview on the focused screen, with one column per screen laid
-// out like the real monitors. Typing filters windows, Enter focuses the first
-// match, Escape or a click on the backdrop closes.
+// out like the real monitors. Typing filters windows, Tab / arrows move
+// through the matches, Enter focuses, Escape or a click on the backdrop closes.
 Scope {
     LazyLoader {
         active: OverviewState.open
@@ -63,18 +63,33 @@ Scope {
                         focus: true
                         onTextChanged: OverviewState.filter = text
 
-                        Keys.onEscapePressed: OverviewState.close()
-                        Keys.onReturnPressed: {
-                            const address = OverviewState.firstMatch();
-                            if (address !== "")
-                                Stage.show(address);
-                            OverviewState.close();
+                        Keys.onPressed: event => {
+                            switch (event.key) {
+                            case Qt.Key_Escape:
+                                OverviewState.close();
+                                break;
+                            case Qt.Key_Return:
+                            case Qt.Key_Enter:
+                                OverviewState.activate();
+                                break;
+                            case Qt.Key_Tab:
+                            case Qt.Key_Down:
+                                OverviewState.step(1);
+                                break;
+                            case Qt.Key_Backtab:
+                            case Qt.Key_Up:
+                                OverviewState.step(-1);
+                                break;
+                            default:
+                                return;
+                            }
+                            event.accepted = true;
                         }
 
                         Text {
                             anchors.verticalCenter: parent.verticalCenter
                             visible: search.text === ""
-                            text: "Rechercher une fenêtre…"
+                            text: "Search windows…"
                             color: Theme.muted
                             font: search.font
                         }
@@ -90,9 +105,7 @@ Scope {
 
                     Repeater {
                         model: ScriptModel {
-                            values: Hypr.monitors.slice()
-                                .sort((a, b) => a.x - b.x || a.y - b.y)
-                                .map(m => m.name)
+                            values: OverviewState.monitorNames
                         }
                         delegate: MonitorColumn {
                             required property string modelData
@@ -105,7 +118,7 @@ Scope {
 
                 Text {
                     Layout.alignment: Qt.AlignHCenter
-                    text: "Glisser : déplacer  ·  Ctrl+clic : sélectionner  ·  Clic milieu : fermer  ·  Glisser un en-tête : changer d'écran"
+                    text: "Tab / ↑↓: browse  ·  Enter: focus  ·  Drag: move  ·  Ctrl+click: select  ·  Middle click: close  ·  Drag a header: move to another screen"
                     color: Theme.muted
                     font.family: Theme.font
                     font.pixelSize: Theme.smallSize

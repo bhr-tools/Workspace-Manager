@@ -14,20 +14,6 @@ Rectangle {
     required property string monitorName
     readonly property var monitor: Hypr.monitorMap[monitorName] ?? null
 
-    // Regular workspaces, plus stage workspaces that only exist backstage
-    // (their stage window was closed while they were not displayed).
-    readonly property var wsIds: {
-        const ids = new Set();
-        for (const w of Hypr.workspaces) {
-            if (w.monitor !== monitorName)
-                continue;
-            const id = w.id > 0 ? w.id : Stage.stageOf(w.name);
-            if (id > 0)
-                ids.add(id);
-        }
-        return [...ids].sort((a, b) => a - b);
-    }
-
     radius: Theme.radius
     color: dropArea.containsDrag ? Theme.highlightLow : "transparent"
     border.color: dropArea.containsDrag ? Theme.foam : "transparent"
@@ -40,7 +26,7 @@ Rectangle {
 
         Text {
             Layout.alignment: Qt.AlignHCenter
-            text: column.monitorName + (column.monitor?.focused ? "  ·  écran actif" : "")
+            text: column.monitorName + (column.monitor?.focused ? "  ·  focused" : "")
             color: column.monitor?.focused ? Theme.text : Theme.subtle
             font.family: Theme.font
             font.pixelSize: Theme.fontSize
@@ -65,7 +51,7 @@ Rectangle {
 
                 Repeater {
                     model: ScriptModel {
-                        values: column.wsIds
+                        values: OverviewState.workspacesOf(column.monitorName)
                     }
                     delegate: WorkspaceCard {
                         required property int modelData
