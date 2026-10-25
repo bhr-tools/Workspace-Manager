@@ -9,7 +9,8 @@ Workspace overview and per-workspace stage manager for Hyprland, built on QuickS
 - **Stage manager**: enabled per workspace. A single tiled window stays on stage,
   the others wait backstage in a strip on the left (click to swap). Floating
   windows are left alone. A newly opened window takes the stage; when the stage
-  window closes, the most recent backstage window steps in.
+  window closes, the most recent backstage window steps in. Workspaces start in
+  regular mode, and stage mode is forgotten once the workspace is closed.
 
 Backstage windows live in hidden special workspaces (`special:stage-<id>`), so
 Hyprland stays the source of truth. Only the list of enabled workspaces is

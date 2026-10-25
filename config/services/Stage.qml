@@ -144,6 +144,14 @@ Singleton {
                 commands.push(...promote(ws, active.address));
         }
 
+        // Stage mode lasts as long as the workspace: once it is gone (no window
+        // on stage nor backstage), it comes back as a regular workspace.
+        const alive = enabled.filter(ws => Hypr.workspaces.some(w => w.id === ws) || stripOf(ws).length > 0);
+        if (alive.length !== enabled.length) {
+            enabled = alive;
+            save();
+        }
+
         const focused = focusedWorkspace();
         for (const ws of enabled) {
             const staged = onStage(ws);
