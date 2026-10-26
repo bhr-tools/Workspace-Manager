@@ -30,13 +30,18 @@ Variants {
         color: "transparent"
         WlrLayershell.namespace: "workspace-manager-stage"
 
+        // Centred vertically; it only scrolls when it no longer fits, and never
+        // past its ends.
         ListView {
-            anchors.fill: parent
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.verticalCenter: parent.verticalCenter
             anchors.leftMargin: Theme.gap
-            anchors.topMargin: Theme.gap
-            anchors.bottomMargin: Theme.gap
+            height: Math.min(contentHeight, parent.height - Theme.gap * 2)
             spacing: Theme.spacing / 2
             clip: true
+            interactive: contentHeight > height
+            boundsBehavior: Flickable.StopAtBounds
             model: ScriptModel {
                 values: strip.windows
             }

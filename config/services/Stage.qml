@@ -68,7 +68,11 @@ Singleton {
             return;
         if (isEnabled(ws)) {
             enabled = enabled.filter(w => w !== ws);
-            run(stripOf(ws).map(c => `movetoworkspacesilent ${ws},address:${c.address}`));
+            const strip = stripOf(ws);
+            run([
+                ...strip.map(c => `movetoworkspacesilent ${ws},address:${c.address}`),
+                ...animate([...onStage(ws), ...strip].map(c => c.address), true),
+            ]);
         } else {
             enabled = [...enabled, ws];
             reconcile();
@@ -97,7 +101,9 @@ Singleton {
                 const c = Hypr.clientMap[a];
                 return c && c.workspace.id !== ws && c.workspace.name !== target;
             })
-            .map(a => `movetoworkspacesilent ${target},address:${a}`);
+            .reduce((commands, a) => commands.concat(
+                animate([a], !isEnabled(ws)),
+                `movetoworkspacesilent ${target},address:${a}`), []);
         if (create && commands.length > 0)
             commands.push(`moveworkspacetomonitor ${ws} ${monitorName}`);
         run(commands);
@@ -110,10 +116,17 @@ Singleton {
     // The window goes on stage first so the workspace is never empty in between.
     function promote(ws: int, address: string): var {
         return [
+            ...animate([address, ...onStage(ws).map(c => c.address)], false),
             `movetoworkspacesilent ${ws},address:${address}`,
             ...onStage(ws).map(c => `movetoworkspacesilent ${specialName(ws)},address:${c.address}`),
             `focuswindow address:${address}`,
         ];
+    }
+
+    // Windows of a stage workspace swap and resize without animation: Hyprland's
+    // window curve overshoots, which makes every swap bounce.
+    function animate(addresses: var, on: bool): var {
+        return addresses.map(a => `setprop address:${a} no_anim ${on ? "unset" : "1"}`);
     }
 
     function run(commands: var): void {
@@ -155,7 +168,9 @@ Singleton {
         const focused = focusedWorkspace();
         for (const ws of enabled) {
             const staged = onStage(ws);
+            const calm = animate([...staged, ...stripOf(ws)].map(c => c.address), false);
             if (staged.length > 1) {
+                commands.push(...calm);
                 // The most recently focused window (usually the one just opened) keeps the stage.
                 const keep = staged.reduce((a, b) => a.focusHistoryID <= b.focusHistoryID ? a : b);
                 for (const c of staged)
@@ -165,6 +180,7 @@ Singleton {
                 // The stage window was closed or moved away: the next one steps in.
                 const next = stripOf(ws)[0];
                 if (next) {
+                    commands.push(...calm);
                     commands.push(`movetoworkspacesilent ${ws},address:${next.address}`);
                     if (ws === focused)
                         commands.push(`focuswindow address:${next.address}`);
